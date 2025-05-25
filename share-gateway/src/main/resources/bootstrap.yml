@@ -11,6 +11,8 @@ spring:
     active: dev
   cloud:
     nacos:
+      username: nacos
+      password: nacos
       discovery:
         # 服务注册地址
         server-addr: 47.119.113.9:8848
