@@ -3,6 +3,7 @@ package com.share.device.domain;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 
 import java.util.Date;
 
@@ -18,8 +19,8 @@ public class StationLocation
     @Schema(description = "站点id")
     private Long stationId;
 
-/*    @Schema(description = "经纬度")
-    private GeoJsonPoint location;*/
+    @Schema(description = "经纬度")
+    private GeoJsonPoint location;
 
     @Schema(description = "创建时间")
     private Date createTime;
