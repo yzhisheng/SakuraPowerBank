@@ -1,0 +1,29 @@
+# Tomcat
+server:
+  port: 9209
+
+# Spring
+spring:
+  application:
+    # 应用名称
+    name: share-user
+  profiles:
+    # 环境配置
+    active: dev
+  cloud:
+    nacos:
+      username: nacos
+      password: nacos
+      discovery:
+        # 服务注册地址
+        server-addr: 47.119.113.9:8848
+        namespace:  18bcfec9-e0bc-45e2-a7fa-4d79d8fbef9f
+      config:
+        # 配置中心地址
+        server-addr: 47.119.113.9:8848
+        namespace:  18bcfec9-e0bc-45e2-a7fa-4d79d8fbef9f
+        # 配置文件格式
+        file-extension: yml
+        # 共享配置
+        shared-configs:
+          - application-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}
