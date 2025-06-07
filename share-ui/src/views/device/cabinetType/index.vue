@@ -129,7 +129,7 @@
       //定义搜索模型
     queryParams: {
       pageNum: 1,//当前页
-      pageSize: 2, //每页记录数
+      pageSize: 10, //每页记录数
       name: null
     },
     //封装表单数据
@@ -249,7 +249,7 @@
   //重置
   function resetQuery() {
     queryParams.value.pageNum = 1
-    queryParams.value.pageSize = 2
+    queryParams.value.pageSize = 10
     queryParams.value.name = null
     handleQuery();
   }

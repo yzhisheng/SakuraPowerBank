@@ -1,4 +1,4 @@
-<template>
+handleQuery<template>
     <div class="app-container">
   
       <!-- 搜索表单 -->
