@@ -16,7 +16,7 @@ public class ShareAuthApplication
 {
     public static void main(String[] args)
     {
-        SpringApplication.run(com.share.auth.ShareAuthApplication.class, args);
+        SpringApplication.run(ShareAuthApplication.class, args);
         System.out.println("(♥◠‿◠)ﾉﾞ  认证授权中心启动成功   ლ(´ڡ`ლ)ﾞ  \n" +
                 " .-------.       ____     __        \n" +
                 " |  _ _   \\      \\   \\   /  /    \n" +
