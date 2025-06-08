@@ -5,6 +5,8 @@ import com.share.common.core.domain.R;
 import com.share.common.core.exception.ServiceException;
 import com.share.common.core.utils.bean.BeanUtils;
 import com.share.device.domain.*;
+import com.share.device.emqx.EmqxClientWrapper;
+import com.share.device.emqx.handler.impl.PowerBankUnlockHandler;
 import com.share.device.service.*;
 import com.share.rule.api.RemoteFeeRuleService;
 import com.share.rule.domain.FeeRule;
@@ -47,13 +49,13 @@ public class DeviceServiceImpl implements IDeviceService {
     private RemoteUserService remoteUserService;
 
 /*    @Autowired
-    private RemoteOrderInfoService remoteOrderInfoService;
+    private RemoteOrderInfoService remoteOrderInfoService;*/
 
     @Autowired
     private EmqxClientWrapper emqxClientWrapper;
 
     @Autowired
-    private PowerBankUnlockHandler powerBankUnlockHandler;*/
+    private PowerBankUnlockHandler powerBankUnlockHandler;
 
     @Autowired
     private RemoteFeeRuleService remoteFeeRuleService;
@@ -181,6 +183,7 @@ public class DeviceServiceImpl implements IDeviceService {
     public ScanChargeVo scanCharge(String cabinetNo) {
         return null;
     }
+
 
     //扫码充电接口
 /*    @Override
