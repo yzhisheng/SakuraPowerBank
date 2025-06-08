@@ -3,7 +3,7 @@ const common_vendor = require("../common/vendor.js");
 function request(url, data = {}, method = "GET") {
   return new Promise((resolve, reject) => {
     common_vendor.index.request({
-      url: "http://localhost:18080" + url,
+      url: "http://localhost:8080" + url,
       method,
       data,
       header: {
