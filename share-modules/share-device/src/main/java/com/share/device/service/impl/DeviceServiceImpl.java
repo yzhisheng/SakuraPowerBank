@@ -1,17 +1,26 @@
 package com.share.device.service.impl;
 
+import cn.hutool.core.util.RandomUtil;
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.share.common.core.context.SecurityContextHolder;
 import com.share.common.core.domain.R;
 import com.share.common.core.exception.ServiceException;
 import com.share.common.core.utils.bean.BeanUtils;
+import com.share.common.security.utils.SecurityUtils;
 import com.share.device.domain.*;
 import com.share.device.emqx.EmqxClientWrapper;
-import com.share.device.emqx.handler.impl.PowerBankUnlockHandler;
+import com.share.device.emqx.ProtocolConvertUtil;
+import com.share.device.emqx.constant.EmqxConstants;
 import com.share.device.service.*;
+import com.share.order.api.RemoteOrderInfoService;
+import com.share.order.domain.OrderInfo;
 import com.share.rule.api.RemoteFeeRuleService;
 import com.share.rule.domain.FeeRule;
-import com.share.system.api.RemoteUserService;
+import com.share.user.api.RemoteUserInfoService;
+import com.share.user.domain.UserInfo;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.Circle;
 import org.springframework.data.geo.Distance;
@@ -23,6 +32,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -45,19 +55,17 @@ public class DeviceServiceImpl implements IDeviceService {
     @Autowired
     private IMapService mapService;
 
-    @Autowired
-    private RemoteUserService remoteUserService;
+    @Resource
+    private RemoteUserInfoService remoteUserInfoService;
 
-/*    @Autowired
-    private RemoteOrderInfoService remoteOrderInfoService;*/
+    @Resource
+    private RemoteOrderInfoService remoteOrderInfoService;
 
     @Autowired
     private EmqxClientWrapper emqxClientWrapper;
 
-    @Autowired
-    private PowerBankUnlockHandler powerBankUnlockHandler;
 
-    @Autowired
+    @Resource
     private RemoteFeeRuleService remoteFeeRuleService;
 
     @Autowired
@@ -179,18 +187,12 @@ public class DeviceServiceImpl implements IDeviceService {
         return stationVo;
     }
 
-    @Override
-    public ScanChargeVo scanCharge(String cabinetNo) {
-        return null;
-    }
-
-
     //扫码充电接口
-/*    @Override
+    @Override
     public ScanChargeVo scanCharge(String cabinetNo) {
         //1 远程调用：根据当前登录用户id查询用户信息，
         // 从用户信息获取是否支持免押金充电
-        R<UserInfo> userInfoR = remoteUserService.getInfo(SecurityContextHolder.getUserId());
+        R<UserInfo> userInfoR = remoteUserInfoService.getInfo(SecurityContextHolder.getUserId());
         UserInfo userInfo = userInfoR.getData();
         //判断
         if(userInfo == null) {
@@ -242,16 +244,16 @@ public class DeviceServiceImpl implements IDeviceService {
         String message = ProtocolConvertUtil.convertString(object);
         emqxClientWrapper.publish(topic, message);
 
-        try {
+/*        try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
-        }
+        }*/
 
         //5 返回封装需要数据
         scanChargeVo.setStatus("1");
         return scanChargeVo;
-    }*/
+    }
 
 
 
@@ -317,124 +319,4 @@ public class DeviceServiceImpl implements IDeviceService {
     }
 
 
-
-
-
-//    @Override
-//    public ScanChargeVo scanCharge(String cabinetNo) {
-//        // 扫码充电返回对象
-//        ScanChargeVo scanChargeVo = new ScanChargeVo();
-//
-//        //免押金判断
-//        R<UserInfo> userInfoResult =  remoteUserService.getInfo(SecurityContextHolder.getUserId());
-//        if (R.FAIL == userInfoResult.getCode()) {
-//            throw new ServiceException(userInfoResult.getMsg());
-//        }
-//        UserInfo userInfo = userInfoResult.getData();
-//        if (null == userInfo) {
-//            throw new ServiceException("获取用户信息失败");
-//        }
-//        if("0".equals(userInfo.getDepositStatus())) {
-//            throw new ServiceException("未申请免押金使用");
-//        }
-//
-//        R<OrderInfo> orderInfoResult = remoteOrderInfoService.getNoFinishOrder(SecurityUtils.getUserId());
-//        if (R.FAIL == orderInfoResult.getCode()) {
-//            throw new ServiceException(orderInfoResult.getMsg());
-//        }
-//        OrderInfo orderInfo = orderInfoResult.getData();
-//        if(null != orderInfo) {
-//            if("0".equals(orderInfo.getStatus())) {
-//                scanChargeVo.setStatus("2");
-//                scanChargeVo.setMessage("有未归还充电宝，请归还后使用");
-//                return scanChargeVo;
-//            }
-//            if("1".equals(orderInfo.getStatus())) {
-//                scanChargeVo.setStatus("3");
-//                scanChargeVo.setMessage("有未支付订单，去支付");
-//                return scanChargeVo;
-//            }
-//        }
-//
-//        // 获取可用充电宝信息
-//        AvailableProwerBankVo availableProwerBankVo = this.checkAvailableProwerBank(cabinetNo);
-//        if(null == availableProwerBankVo) {
-//            throw new ServiceException("无可用充电宝");
-//        }
-//        if(!StringUtils.isEmpty(availableProwerBankVo.getErrMessage())) {
-//            throw new ServiceException(availableProwerBankVo.getErrMessage());
-//        }
-//
-//        // 生成借取指令，弹出充电宝
-//        JSONObject object = new JSONObject();
-//        object.put("uId", SecurityContextHolder.getUserId());//SecurityUtils.getUserId()
-//        object.put("mNo", "mm"+RandomUtil.randomString(8));
-//        object.put("cNo", cabinetNo);
-//        object.put("pNo", availableProwerBankVo.getPowerBankNo());
-//        object.put("sNo", availableProwerBankVo.getSlotNo());
-////        object.put("pNo", "cdb001");
-////        object.put("sNo", "1");
-//        String topic = String.format(EmqxConstants.TOPIC_SCAN_SUBMIT, cabinetNo);
-//        String message = ProtocolConvertUtil.convertString(object);
-//        emqxClientWrapper.publish(topic, message);
-//
-//        try {
-//            Thread.sleep(2000);
-//        } catch (InterruptedException e) {
-//            throw new RuntimeException(e);
-//        }
-//
-//        scanChargeVo.setStatus("1");
-//        return scanChargeVo;
-//    }
-//
-//    public AvailableProwerBankVo checkAvailableProwerBank(String cabinetNo) {
-//        try {
-//            AvailableProwerBankVo availableProwerBankVo = new AvailableProwerBankVo();
-//
-//            Cabinet cabinet = cabinetService.getBtCabinetNo(cabinetNo);
-//            if(cabinet.getAvailableNum() == 0) {
-//                availableProwerBankVo.setErrMessage("无可用充电宝");
-//                return availableProwerBankVo;
-//            }
-//            // 获取插槽列表
-//            List<CabinetSlot> cabinetSlotList = cabinetSlotService.list(new LambdaQueryWrapper<CabinetSlot>()
-//                    .eq(CabinetSlot::getCabinetId, cabinet.getId())
-//                    .eq(CabinetSlot::getStatus, "1") // 状态（1：占用 0：空闲 2：锁定）
-//            );
-//            // 获取插槽对应的充电宝id列表
-//            List<Long> powerBankIdList = cabinetSlotList.stream()
-//                    .filter(item -> null != item.getPowerBankId())
-//                    .map(CabinetSlot::getPowerBankId).collect(Collectors.toList());
-//            //获取可用充电宝列表
-//            List<PowerBank> powerBankList =
-//                    powerBankService.list(new LambdaQueryWrapper<PowerBank>()
-//                            .in(PowerBank::getId, powerBankIdList)
-//                            .eq(PowerBank::getStatus, "1"));
-//            if(CollectionUtils.isEmpty(powerBankList)) {
-//                availableProwerBankVo.setErrMessage("无可用充电宝");
-//                return availableProwerBankVo;
-//            }
-//            // 根据电量降序排列
-//            if(powerBankList.size() > 1) {
-//                Collections.sort(powerBankList, (o1, o2) -> o2.getElectricity().compareTo(o1.getElectricity()));
-//            }
-//            // 获取电量最多的充电宝
-//            PowerBank powerBank = powerBankList.get(0);
-//            // 获取电量最多的充电宝插槽信息
-//            CabinetSlot cabinetSlot = cabinetSlotList.stream().filter(item -> null != item.getPowerBankId() && item.getPowerBankId().equals(powerBank.getId())).collect(Collectors.toList()).get(0);
-//            //锁定柜机卡槽
-//            cabinetSlot.setStatus("2");
-//            cabinetSlotService.updateById(cabinetSlot);
-//
-//            // 设置返回对象
-//            availableProwerBankVo.setPowerBankNo(powerBank.getPowerBankNo());
-//            availableProwerBankVo.setSlotNo(cabinetSlot.getSlotNo());
-//
-//            return availableProwerBankVo;
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        return null;
-//    }
 }

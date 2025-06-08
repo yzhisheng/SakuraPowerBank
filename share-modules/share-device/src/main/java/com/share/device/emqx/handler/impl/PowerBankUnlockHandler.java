@@ -1,6 +1,13 @@
 package com.share.device.emqx.handler.impl;
 
 import com.alibaba.fastjson2.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.share.common.rabbit.constant.MqConst;
+import com.share.common.rabbit.service.RabbitService;
+import com.share.device.domain.Cabinet;
+import com.share.device.domain.CabinetSlot;
+import com.share.device.domain.PowerBank;
+import com.share.device.domain.Station;
 import com.share.device.emqx.annotation.GuiguEmqx;
 import com.share.device.emqx.constant.EmqxConstants;
 import com.share.device.emqx.handler.MassageHandler;
@@ -8,10 +15,16 @@ import com.share.device.service.ICabinetService;
 import com.share.device.service.ICabinetSlotService;
 import com.share.device.service.IPowerBankService;
 import com.share.device.service.IStationService;
+import com.share.order.domain.SubmitOrderVo;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
@@ -33,13 +46,8 @@ public class PowerBankUnlockHandler implements MassageHandler {
     @Autowired
     private RedisTemplate redisTemplate;
 
-    @Override
-    public void handleMessage(JSONObject message) {
-
-    }
-
-/*    @Autowired
-    private RabbitService rabbitService;*/
+    @Autowired
+    private RabbitService rabbitService;
 
     /**
      * 充电宝弹出后续处理
@@ -48,7 +56,7 @@ public class PowerBankUnlockHandler implements MassageHandler {
      * {"messageNo":"7777","slotNo":"1","userId":1,
      * "cabinetNo":"xgxgxxxg","powerBankNo":"gg001"}
      */
-/*    @Transactional(rollbackFor = Exception.class)
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public void handleMessage(JSONObject message) {
         try {
@@ -136,6 +144,6 @@ public class PowerBankUnlockHandler implements MassageHandler {
         rabbitService.sendMessage(MqConst.EXCHANGE_ORDER,
                 MqConst.ROUTING_SUBMIT_ORDER,
                 JSONObject.toJSONString(submitOrderVo));
-    }*/
+    }
 }
 

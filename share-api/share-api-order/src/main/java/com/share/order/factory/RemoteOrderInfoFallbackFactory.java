@@ -1,8 +1,7 @@
-package com.share.user.factory;
+package com.share.order.factory;
 
-import com.share.common.core.domain.R;
 import com.share.common.core.exception.ServiceException;
-import com.share.user.api.RemoteUserService;
+import com.share.order.api.RemoteOrderInfoService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.openfeign.FallbackFactory;
@@ -14,12 +13,12 @@ import org.springframework.stereotype.Component;
  * @author share
  */
 @Component
-public class RemoteUserFallbackFactory implements FallbackFactory<RemoteUserService>
+public class RemoteOrderInfoFallbackFactory implements FallbackFactory<RemoteOrderInfoService>
 {
-    private static final Logger log = LoggerFactory.getLogger(RemoteUserFallbackFactory.class);
+    private static final Logger log = LoggerFactory.getLogger(RemoteOrderInfoFallbackFactory.class);
 
     @Override
-    public RemoteUserService create(Throwable throwable)
+    public RemoteOrderInfoService create(Throwable throwable)
     {
         log.error("用户服务调用失败:{}", throwable.getMessage());
         throw new ServiceException("调用出现错误");

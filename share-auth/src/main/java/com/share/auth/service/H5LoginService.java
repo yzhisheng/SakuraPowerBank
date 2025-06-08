@@ -4,7 +4,7 @@ import com.share.common.core.domain.R;
 import com.share.common.core.exception.ServiceException;
 import com.share.common.core.utils.StringUtils;
 import com.share.system.api.model.LoginUser;
-import com.share.user.api.RemoteUserService;
+import com.share.user.api.RemoteUserInfoService;
 import com.share.user.domain.UserInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 public class H5LoginService {
 
     @Autowired
-    private RemoteUserService remoteUserService;
+    private RemoteUserInfoService remoteUserInfoService;
 
     //登录的方法
     public LoginUser login(String code) {
@@ -23,7 +23,7 @@ public class H5LoginService {
         }
 
         //2 拿着code进行远程调用完成登录，返回userInfo
-        R<UserInfo> userInfoR = remoteUserService.wxLogin(code);
+        R<UserInfo> userInfoR = remoteUserInfoService.wxLogin(code);
         UserInfo userInfo = userInfoR.getData();
 
         //3 判断返回userInfo是否为空
