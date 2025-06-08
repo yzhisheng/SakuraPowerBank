@@ -13,6 +13,7 @@ import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
@@ -53,6 +54,7 @@ public class StationServiceImpl extends ServiceImpl<StationMapper, Station>
     }
 
     //添加
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int saveStation(Station station) {
         String provinceName = regionService.getNameByCode(station.getProvinceCode());
@@ -72,6 +74,7 @@ public class StationServiceImpl extends ServiceImpl<StationMapper, Station>
     }
 
     //修改
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateStation(Station station) {
         String provinceName = regionService.getNameByCode(station.getProvinceCode());

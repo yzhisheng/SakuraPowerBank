@@ -1,9 +1,14 @@
 package com.share.device.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.share.common.core.domain.R;
+import com.share.common.core.exception.ServiceException;
 import com.share.common.core.utils.bean.BeanUtils;
 import com.share.device.domain.*;
 import com.share.device.service.*;
+import com.share.rule.api.RemoteFeeRuleService;
+import com.share.rule.domain.FeeRule;
+import com.share.system.api.RemoteUserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.Circle;
@@ -38,20 +43,20 @@ public class DeviceServiceImpl implements IDeviceService {
     @Autowired
     private IMapService mapService;
 
-/*    @Autowired
+    @Autowired
     private RemoteUserService remoteUserService;
 
-    @Autowired
+/*    @Autowired
     private RemoteOrderInfoService remoteOrderInfoService;
 
     @Autowired
     private EmqxClientWrapper emqxClientWrapper;
 
     @Autowired
-    private PowerBankUnlockHandler powerBankUnlockHandler;
+    private PowerBankUnlockHandler powerBankUnlockHandler;*/
 
     @Autowired
-    private RemoteFeeRuleService remoteFeeRuleService;*/
+    private RemoteFeeRuleService remoteFeeRuleService;
 
     @Autowired
     private ICabinetSlotService cabinetSlotService;
@@ -68,8 +73,8 @@ public class DeviceServiceImpl implements IDeviceService {
                 new GeoJsonPoint(Double.parseDouble(longitude),
                         Double.parseDouble(latitude));
 
-        //设置查询半径，比如查询10公里
-        Distance distance = new Distance(10, Metrics.KILOMETERS);
+        //设置查询半径，比如查询50公里
+        Distance distance = new Distance(50, Metrics.KILOMETERS);
 
         //画圆
         Circle circle = new Circle(geoJsonPoint,distance);
@@ -77,6 +82,9 @@ public class DeviceServiceImpl implements IDeviceService {
         //查询mongoDB数据
         Query query = Query.query(Criteria.where("location").withinSphere(circle));
         List<StationLocation> list = mongoTemplate.find(query, StationLocation.class);
+        if(CollectionUtils.isEmpty(list)){
+            throw new ServiceException("附近没有站点信息.....");
+        }
 
         //查询其他需要数据，进行封装
         //根据查询mongoDB的list集合里面获取站点其他数据
@@ -121,20 +129,52 @@ public class DeviceServiceImpl implements IDeviceService {
             }
 
             //获取站点规则数据
-//            Long feeRuleId = station.getFeeRuleId();
-//            R<FeeRule> feeRuleResult = remoteFeeRuleService.getFeeRule(feeRuleId);
-//            FeeRule feeRule = feeRuleResult.getData();
-//            String description = feeRule.getDescription();
-//            stationVo.setFeeRule(description);
+            Long feeRuleId = station.getFeeRuleId();
+            R<FeeRule> feeRuleResult = remoteFeeRuleService.getFeeRule(feeRuleId);
+            FeeRule feeRule = feeRuleResult.getData();
+            String description = feeRule.getDescription();
+            stationVo.setFeeRule(description);
 
             stationVoList.add(stationVo);
         });
         return stationVoList;
     }
 
+    //门店详情
     @Override
     public StationVo getStation(Long id, String latitude, String longitude) {
-        return null;
+        //根据门店id获取详情
+        Station station = stationService.getById(id);
+        //封装到StationVo
+        StationVo stationVo = new StationVo();
+        BeanUtils.copyProperties(station,stationVo);
+        //当前位置距离门店距离
+        Double distance = mapService.calculateDistance(longitude, latitude,
+                station.getLongitude().toString(), station.getLatitude().toString());
+        stationVo.setDistance(distance);
+
+        // 获取柜机信息
+        Cabinet cabinet = cabinetService.getById(station.getCabinetId());
+        //可用充电宝数量大于0，可借用
+        if(cabinet.getAvailableNum() > 0) {
+            stationVo.setIsUsable("1");
+        } else {
+            stationVo.setIsUsable("0");
+        }
+        // 获取空闲插槽数量大于0，可归还
+        if (cabinet.getFreeSlots() > 0) {
+            stationVo.setIsReturn("1");
+        } else {
+            stationVo.setIsReturn("0");
+        }
+
+        // 获取费用规则
+        FeeRule feeRule =
+                remoteFeeRuleService.getFeeRule(station.getFeeRuleId()).getData();
+        stationVo.setFeeRule(feeRule.getDescription());
+
+        //返回数据
+        return stationVo;
     }
 
     @Override
@@ -142,110 +182,73 @@ public class DeviceServiceImpl implements IDeviceService {
         return null;
     }
 
-    //门店详情
-//    @Override
-//    public StationVo getStation(Long id, String latitude, String longitude) {
-//        //根据门店id获取详情
-//        Station station = stationService.getById(id);
-//        //封装到StationVo
-//        StationVo stationVo = new StationVo();
-//        BeanUtils.copyProperties(station,stationVo);
-//        //当前位置距离门店距离
-//        Double distance = mapService.calculateDistance(longitude, latitude,
-//                station.getLongitude().toString(), station.getLatitude().toString());
-//        stationVo.setDistance(distance);
-//
-//        // 获取柜机信息
-//        Cabinet cabinet = cabinetService.getById(station.getCabinetId());
-//        //可用充电宝数量大于0，可借用
-//        if(cabinet.getAvailableNum() > 0) {
-//            stationVo.setIsUsable("1");
-//        } else {
-//            stationVo.setIsUsable("0");
-//        }
-//        // 获取空闲插槽数量大于0，可归还
-//        if (cabinet.getFreeSlots() > 0) {
-//            stationVo.setIsReturn("1");
-//        } else {
-//            stationVo.setIsReturn("0");
-//        }
-//
-//        // 获取费用规则
-//        FeeRule feeRule =
-//                remoteFeeRuleService.getFeeRule(station.getFeeRuleId()).getData();
-//        stationVo.setFeeRule(feeRule.getDescription());
-//
-//        //返回数据
-//        return stationVo;
-//    }
-//
-//    //扫码充电接口
-//    @Override
-//    public ScanChargeVo scanCharge(String cabinetNo) {
-//        //1 远程调用：根据当前登录用户id查询用户信息，
-//        // 从用户信息获取是否支持免押金充电
-//        R<UserInfo> userInfoR = remoteUserService.getInfo(SecurityContextHolder.getUserId());
-//        UserInfo userInfo = userInfoR.getData();
-//        //判断
-//        if(userInfo == null) {
-//            throw new ServiceException("获取用户信息失败");
-//        }
-//        //判断是否免押金
-//        if("0".equals(userInfo.getDepositStatus())) {
-//            throw new ServiceException("未申请免押金使用");
-//        }
-//
-//        ScanChargeVo scanChargeVo = new ScanChargeVo();
-//        //2 远程调用：判断用户是否有未完成订单
-//        R<OrderInfo> orderInfoR = remoteOrderInfoService.getNoFinishOrder(SecurityUtils.getUserId());
-//        OrderInfo orderInfo = orderInfoR.getData();
-//        if(orderInfo != null) {//有 未完成订单
-//            String status = userInfo.getStatus();
-//            if("0".equals(status)) {
-//                scanChargeVo.setStatus("2");
-//                scanChargeVo.setMessage("有未归还充电宝，请归还后使用");
-//                return scanChargeVo;
-//            }
-//            if("1".equals(status)) {
-//                scanChargeVo.setStatus("3");
-//                scanChargeVo.setMessage("有未支付订单，去支付");
-//                return scanChargeVo;
-//            }
-//        }
-//
-//        //3 从柜机里面获取最优充电宝
-//        AvailableProwerBankVo availableProwerBankVo =
-//                this.checkAvailableProwerBank(cabinetNo);
-//        if(null == availableProwerBankVo) {
-//            throw new ServiceException("无可用充电宝");
-//        }
-//        if(!StringUtils.isEmpty(availableProwerBankVo.getErrMessage())) {
-//            throw new ServiceException(availableProwerBankVo.getErrMessage());
-//        }
-//
-//        //4 把选择最优充电宝弹出
-//        // 使用MQTT弹出充电宝
-//        // 生成借取指令，弹出充电宝
-//        JSONObject object = new JSONObject();
-//        object.put("uId", SecurityContextHolder.getUserId());//SecurityUtils.getUserId()
-//        object.put("mNo", "mm"+ RandomUtil.randomString(8));
-//        object.put("cNo", cabinetNo);
-//        object.put("pNo", availableProwerBankVo.getPowerBankNo());
-//        object.put("sNo", availableProwerBankVo.getSlotNo());
-//        String topic = String.format(EmqxConstants.TOPIC_SCAN_SUBMIT, cabinetNo);
-//        String message = ProtocolConvertUtil.convertString(object);
-//        emqxClientWrapper.publish(topic, message);
-//
-//        try {
-//            Thread.sleep(2000);
-//        } catch (InterruptedException e) {
-//            throw new RuntimeException(e);
-//        }
-//
-//        //5 返回封装需要数据
-//        scanChargeVo.setStatus("1");
-//        return scanChargeVo;
-//    }
+    //扫码充电接口
+/*    @Override
+    public ScanChargeVo scanCharge(String cabinetNo) {
+        //1 远程调用：根据当前登录用户id查询用户信息，
+        // 从用户信息获取是否支持免押金充电
+        R<UserInfo> userInfoR = remoteUserService.getInfo(SecurityContextHolder.getUserId());
+        UserInfo userInfo = userInfoR.getData();
+        //判断
+        if(userInfo == null) {
+            throw new ServiceException("获取用户信息失败");
+        }
+        //判断是否免押金
+        if("0".equals(userInfo.getDepositStatus())) {
+            throw new ServiceException("未申请免押金使用");
+        }
+
+        ScanChargeVo scanChargeVo = new ScanChargeVo();
+        //2 远程调用：判断用户是否有未完成订单
+        R<OrderInfo> orderInfoR = remoteOrderInfoService.getNoFinishOrder(SecurityUtils.getUserId());
+        OrderInfo orderInfo = orderInfoR.getData();
+        if(orderInfo != null) {//有 未完成订单
+            String status = userInfo.getStatus();
+            if("0".equals(status)) {
+                scanChargeVo.setStatus("2");
+                scanChargeVo.setMessage("有未归还充电宝，请归还后使用");
+                return scanChargeVo;
+            }
+            if("1".equals(status)) {
+                scanChargeVo.setStatus("3");
+                scanChargeVo.setMessage("有未支付订单，去支付");
+                return scanChargeVo;
+            }
+        }
+
+        //3 从柜机里面获取最优充电宝
+        AvailableProwerBankVo availableProwerBankVo =
+                this.checkAvailableProwerBank(cabinetNo);
+        if(null == availableProwerBankVo) {
+            throw new ServiceException("无可用充电宝");
+        }
+        if(!StringUtils.isEmpty(availableProwerBankVo.getErrMessage())) {
+            throw new ServiceException(availableProwerBankVo.getErrMessage());
+        }
+
+        //4 把选择最优充电宝弹出
+        // 使用MQTT弹出充电宝
+        // 生成借取指令，弹出充电宝
+        JSONObject object = new JSONObject();
+        object.put("uId", SecurityContextHolder.getUserId());//SecurityUtils.getUserId()
+        object.put("mNo", "mm"+ RandomUtil.randomString(8));
+        object.put("cNo", cabinetNo);
+        object.put("pNo", availableProwerBankVo.getPowerBankNo());
+        object.put("sNo", availableProwerBankVo.getSlotNo());
+        String topic = String.format(EmqxConstants.TOPIC_SCAN_SUBMIT, cabinetNo);
+        String message = ProtocolConvertUtil.convertString(object);
+        emqxClientWrapper.publish(topic, message);
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        //5 返回封装需要数据
+        scanChargeVo.setStatus("1");
+        return scanChargeVo;
+    }*/
 
 
 
