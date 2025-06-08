@@ -32,8 +32,8 @@
     "disableSWC": true
   },
   "compileType": "miniprogram",
-  "libVersion": "3.6.4",
-  "appid": "touristappid",
+  "libVersion": "3.8.6",
+  "appid": "wx147b8fb5cc7536dc",
   "projectname": "guli-chongdian",
   "condition": {},
   "editorSetting": {
