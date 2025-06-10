@@ -8,10 +8,10 @@ import com.share.rules.domain.vo.FeeRuleRequest;
 import com.share.rules.domain.vo.FeeRuleResponse;
 import com.share.rules.mapper.FeeRuleMapper;
 import com.share.rules.service.IFeeRuleService;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +28,7 @@ import java.math.BigDecimal;
 @Service
 public class FeeRuleServiceImpl extends ServiceImpl<FeeRuleMapper, FeeRule> implements IFeeRuleService
 {
-    @Autowired
+    @Resource
     private FeeRuleMapper feeRuleMapper;
 
     @Autowired
